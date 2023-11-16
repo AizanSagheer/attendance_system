@@ -1,12 +1,17 @@
+import 'package:attendance/Utils/app_constants.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 
 import '../Models/student_model.dart';
 
 class StudentProvider extends ChangeNotifier{
 
+  String _selectedLanguage = 'English';
+
   final List<StudentAttendance> _checkedInStudents = [];
   final List<StudentAttendance> _checkedOutStudents = [];
-  final List<StudentAbsent> _studentAbsent = [];
+    List<StudentAbsent> _studentAbsent = [];
+   List<Student> _filteredStudents = [];
 
 
 
@@ -18,16 +23,41 @@ class StudentProvider extends ChangeNotifier{
     Student(id: '2023-DBC-1', name: 'Mark'),
   ];
 
-  // void checkIn(int index) {
-  //   _students[index].isCheckedIn = true;
-  //
-  //   checkedInStudents[index].name =  _students[index].name;
-  //   checkedInStudents[index].id =  _students[index].id;
-  //   checkedInStudents[index].time =  DateTime.now();
-  //
-  //   notifyListeners();
-  //   debugPrint("Checked In at ${DateTime.now()}");
-  // }
+  void searchStudents(String query) {
+    _filteredStudents = _students.where((student) => student.name.toLowerCase().contains(query.toLowerCase())).toList();
+    notifyListeners();
+  }
+
+
+  void addToDatabase() async {
+    var box = await Hive.openBox<Student>(AppConstants.databaseName);
+    for (var student in _students) {
+      box.put(student.id, student);
+    }
+    await box.close();
+  }
+
+
+  Future<void> fetchDataBaseItems() async {
+
+    final absentDataBase = await Hive.openBox<StudentAbsent>(AppConstants.databaseName);
+
+    try {
+      List<StudentAbsent> dataFromDb= absentDataBase.values.toList();
+      _studentAbsent= absentDataBase.values.toList();
+
+    } finally {
+     await absentDataBase.close();
+    }
+
+    notifyListeners();
+  }
+
+
+  void changeLanguage(String language) {
+    _selectedLanguage = language;
+    notifyListeners();
+  }
 
   void checkIn(int index) {
       _students[index].isCheckedIn = true;
@@ -35,7 +65,7 @@ class StudentProvider extends ChangeNotifier{
       StudentAttendance attendance = StudentAttendance(
         name: _students[index].name,
         id: _students[index].id,
-        time: DateTime.now(),
+        time: AppConstants().formatDate(DateTime.now().toString()),
       );
 
       _checkedInStudents.add(attendance);
@@ -47,21 +77,11 @@ class StudentProvider extends ChangeNotifier{
   }
 
 
-  // void checkOut(int index) {
-  //
-  //   _students[index].isCheckedIn = false;
-  //   _students[index].isCheckedOut = true;
-  //
-  //   _students[index].checkOutTime = DateTime.now();
-  //
-  //   notifyListeners();
-  //   debugPrint("Checked Out at ${_students[index].checkOutTime}");
-  // }
-
   void checkOut(int index) {
+
       _students[index].isCheckedIn = false;
       _students[index].isCheckedOut = true;
-      _students[index].checkOutTime = DateTime.now();
+      _students[index].checkOutTime = AppConstants().formatDate(DateTime.now().toString());
 
       StudentAttendance attendance = StudentAttendance(
         name: _students[index].name,
@@ -77,24 +97,22 @@ class StudentProvider extends ChangeNotifier{
 
   }
 
-  void clearCheckInCheckOut(int index) {
-    _students[index].isCheckedIn = false;
-    _students[index].isCheckedOut = false;
-    notifyListeners();
-    debugPrint("Both Checked In and Checked Out cleared");
-  }
-
-  void markAbsent(int index, DateTime date, {String remark = ""}) {
+  void markAbsent(int index, DateTime date, {String remark = ""}) async{
     debugPrint('index $index date $date remark $remark');
 
     StudentAbsent studentAbsent = StudentAbsent(
       id: _students[index].id,
       name: _students[index].name,
       reason: remark,
-      time: date,
+      time: AppConstants().formatDate(date.toString()),
     );
 
-    _studentAbsent.add(studentAbsent);
+  //  _studentAbsent.add(studentAbsent);
+
+    final box = await Hive.openBox<StudentAbsent>(AppConstants.databaseName);
+    box.add(studentAbsent);
+    box.close();
+
     notifyListeners();
   }
 
@@ -102,4 +120,7 @@ class StudentProvider extends ChangeNotifier{
   List<StudentAttendance> get studentsCheckedIn => _checkedInStudents;
   List<StudentAttendance> get studentsCheckedOut => _checkedOutStudents;
   List<StudentAbsent> get studentsAbsent => _studentAbsent;
+  String get selectedLanguage => _selectedLanguage;
+  List<Student> get filteredStudents => _filteredStudents;
+
 }

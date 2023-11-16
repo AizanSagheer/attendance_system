@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_locales/flutter_locales.dart';
 
 import '../../Utils/color_constants.dart';
 
@@ -28,7 +29,7 @@ class HomeCard extends StatelessWidget {
             borderRadius: const BorderRadius.all(Radius.circular(20))
         ),
         alignment: Alignment.center,
-        child: Text(cardTitle, style: const TextStyle(color: ColorConstants.primaryColor, fontWeight: FontWeight.bold),),
+        child: LocaleText(cardTitle, style: const TextStyle(color: ColorConstants.primaryColor, fontWeight: FontWeight.bold),),
       ),
     );
   }

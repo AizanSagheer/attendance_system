@@ -107,6 +107,7 @@ class AbsentListWidget extends StatelessWidget {
 
   Future<void> _showCheckAbsentRecordDialog(BuildContext context, StudentProvider studentsProvider, int index) async {
     String studentId = studentsProvider.students[index].id;
+    studentsProvider.fetchDataBaseItems();
 
     List<StudentAbsent> matchingRecords = studentsProvider.studentsAbsent
         .where((record) => record.id == studentId)
@@ -132,7 +133,7 @@ class AbsentListWidget extends StatelessWidget {
                     return Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(AppConstants().formatDate(record.time.toString())),
+                        Text(record.time),
                         Text(record.reason),
                       ],
                     );
